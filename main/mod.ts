@@ -112,6 +112,12 @@ export async function join(id: BoardId, player: UserContext) {
 }
 
 export async function move(id: BoardId, player: UserContext, x: number, y: number) {
+  if (x < 0 || x > 2) {
+    throw `expect x in [0, 2], but got ${x}`;
+  }
+  if (y < 0 || y > 2) {
+    throw `expect y in [0, 2], but got ${y}`;
+  }
   await call(
     player,
     "make_move",
@@ -139,5 +145,5 @@ async function call(
     args,
   );
   txn = await devapi.waitForTransaction(txn.hash);
-  assert(txn.success);
+  assert(txn.success, txn.vm_status);
 }
