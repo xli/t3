@@ -14,7 +14,7 @@ Deno.test("Test Play Tic Tac Toe", async () => {
   const playerB = context.UserContext.fromEnv("test");
 
   const board = await main.init(playerA);
-  assertEquals({"hostAddress": playerA.address, "index": 0}, board.id());
+  assertEquals(main.boardId(playerA, 0), board.id());
 
   assertEquals(await board.view(), `
 - - -

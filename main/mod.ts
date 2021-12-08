@@ -91,6 +91,10 @@ function playerTokenId(board: BoardData, player: string): number {
   }
 }
 
+export function boardId(player: UserContext, index: number): BoardId {
+  return new BoardId(player.address, index);
+}
+
 export async function init(host: UserContext) {
   await call(
     host,
