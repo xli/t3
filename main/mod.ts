@@ -16,19 +16,12 @@ export class BoardId {
   constructor(readonly hostAddress: string, readonly index: number) {}
 }
 
-export interface Move {
-  player: string,
-  x: number,
-  y: number,
-}
-
 export interface BoardData {
-  x: string;
-  o: OptionAddress;
-  moves: Move[]
+  players: string[];
+  cells: string;
 }
 
-export interface BoardsResource {
+export interface Resource {
   data: Boards
 }
 
@@ -44,63 +37,58 @@ export class Board {
   }
 
   async view(): Promise<string> {
-    const boards: BoardsResource[] = await devapi.resourcesWithName("TicTacToe::Boards", this.hostAddress);
+    const boards: Resource[] = await devapi.resourcesWithName("TicTacToe::Boards", this.hostAddress);
     const b: BoardData = boards[0].data.boards[this.index];
-    const board = [
-      ['-', '-', '-'],
-      ['-', '-', '-'],
-      ['-', '-', '-'],
-    ];
-    let winner = "";
-    for (let i=0; i<b.moves.length; i++) {
-      const m = b.moves[i];
-      board[m.x][m.y] = m.player == b.x ? "x" : "o";
-      if (check(board, m.x, m.y)) {
-        winner = m.player;
-        break;
-      }
-    }
-
     return `
-${board[0][0]} ${board[0][1]} ${board[0][2]}
-${board[1][0]} ${board[1][1]} ${board[1][2]}
-${board[2][0]} ${board[2][1]} ${board[2][2]}
+${token(b, 0)} ${token(b, 1)} ${token(b, 2)}
+${token(b, 3)} ${token(b, 4)} ${token(b, 5)}
+${token(b, 6)} ${token(b, 7)} ${token(b, 8)}
 
-player x: ${b.x}${gameResult(b.x, winner)}
-player o: ${address(b.o)}${gameResult(address(b.o), winner)}
+player x: ${playerInfo(b, b.players[0])}
+player o: ${playerInfo(b, b.players[1])}
 `
   }
 }
 
-interface OptionAddress {
-  vec: string[]
+function token(board: BoardData, index: number): string {
+  const t = DiemHelpers.hexToBytes(board.cells)[index];
+  return t == 0 ? "-" : (t == 1 ? "x" : "o")
 }
 
-function address(opt: OptionAddress): string {
-  return opt.vec.length == 1 ? opt.vec[0] : "-";
+function playerInfo(board: BoardData, player: string): string {
+  const winner = isWinner(board, player) ? " -- winner" : "";
+  return player ? `${player}${winner}` : "-"
 }
 
-function gameResult(player: string, winner: string): string {
-  if (winner == "") {
-    return "";
+function isWinner(board: BoardData, player: string): boolean {
+  const cells = DiemHelpers.hexToBytes(board.cells);
+  function cell(x: number, y: number): number {
+    return cells[x*3+y]
   }
-  return player == winner ? " -- winner" : " -- loser";
-}
-
-function check(board: string[][], x: number, y: number): boolean {
-  if (board[x][0] != "-" && board[x][0] == board[x][1] && board[x][0] == board[x][2]) {
+  const tokenId = playerTokenId(board, player);
+  for (let i=0; i<3; i++) {
+    if (cell(0, i) == tokenId && cell(1, i) == tokenId && cell(2, i) == tokenId) {
+      return true;
+    }
+    if (cell(i, 0) == tokenId && cell(i, 1) == tokenId && cell(i, 2) == tokenId) {
+      return true;
+    }
+  }
+  if (cell(0, 0) == tokenId && cell(1, 1) == tokenId && cell(2, 2) == tokenId) {
     return true;
   }
-  if (board[0][y] != "-" && board[0][y] == board[1][y] && board[0][y] == board[2][y]) {
-    return true;
-  }
-  if (board[0][0] != "-" && board[0][0] == board[1][1] && board[0][0] == board[2][2]) {
-    return true;
-  }
-  if (board[0][2] != "-" && board[0][2] == board[1][1] && board[0][2] == board[2][0]) {
+  if (cell(2, 0) == tokenId && cell(1, 1) == tokenId && cell(0, 2) == tokenId) {
     return true;
   }
   return false;
+}
+
+function playerTokenId(board: BoardData, player: string): number {
+  try {
+    return board.players.indexOf(player) + 1;
+  } catch {
+    throw `unknown player: ${player}`
+  }
 }
 
 export async function init(host: UserContext) {

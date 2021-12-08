@@ -207,7 +207,7 @@ function appendBuffer(buffer1: Uint8Array, buffer2: Uint8Array): Uint8Array {
   return tmp;
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
   if (hex.startsWith("0x")) {
     hex = hex.slice(2);
   }

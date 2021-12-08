@@ -75,6 +75,6 @@ x o -
 x o -
 
 player x: ${playerA.address} -- winner
-player o: ${playerB.address} -- loser
+player o: ${playerB.address}
 `);
 });
