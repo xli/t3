@@ -78,3 +78,13 @@ player x: ${playerA.address} -- winner
 player o: ${playerB.address}
 `);
 });
+
+Deno.test("Test init multiple games", async () => {
+  const playerA = context.defaultUserContext;
+
+  const board1 = await main.init(playerA);
+  const nextBoardIndex = board1.id().index + 1;
+
+  const board2 = await main.init(playerA);
+  assertEquals(main.boardId(playerA, nextBoardIndex), board2.id());
+});

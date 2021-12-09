@@ -36,9 +36,17 @@ export class Board {
     return new BoardId(this.hostAddress, this.index);
   }
 
+  async data(): Promise<BoardData> {
+    const boards: BoardData[] = await accountBoards(this.hostAddress);
+    try {
+      return boards[this.index];
+    } catch {
+      throw `could not find game board by index ${this.index}, boards: ${boards}`;
+    }
+  }
+
   async view(): Promise<string> {
-    const boards: Resource[] = await devapi.resourcesWithName("TicTacToe::Boards", this.hostAddress);
-    const b: BoardData = boards[0].data.boards[this.index];
+    const b = await this.data();
     return `
 ${token(b, 0)} ${token(b, 1)} ${token(b, 2)}
 ${token(b, 3)} ${token(b, 4)} ${token(b, 5)}
@@ -102,7 +110,7 @@ export async function init(host: UserContext) {
     [],
   );
 
-  const boards = await devapi.resourcesWithName("TicTacToe::Boards", host.address);
+  const boards = await accountBoards(host.address);
   return new Board(host.address, boards.length - 1);
 }
 
@@ -133,6 +141,14 @@ export async function move(id: BoardId, player: UserContext, x: number, y: numbe
 export async function showBoard(id: BoardId) {
   const b = new Board(id.hostAddress, id.index);
   return await b.view();
+}
+
+export async function accountBoards(hostAddress: string): Promise<BoardData[]> {
+  let resources: Resource[] = await devapi.resourcesWithName("TicTacToe::Boards", hostAddress);
+  if (resources.length == 0) {
+    throw `could not find TicTacToe::Boards for account ${hostAddress}`;
+  }
+  return resources[0].data.boards;
 }
 
 async function call(
